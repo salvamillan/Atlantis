@@ -23,7 +23,8 @@
           <span class="dot" aria-hidden="true"></span>
           <span id="userStatus">No autenticado</span>
         </div>
-<button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
+
+        <button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
       </div>
     </header>
 
@@ -34,7 +35,7 @@
           <div class="heroCard">
             <h1>Tu próxima lectura te espera</h1>
             <p>
-              Explora el catálogo de Atlantis, filtra por género y compra en un clic.
+              Explora el catálogo de Atlantis, filtra por género y consulta tus pedidos.
               (Demo)
             </p>
 
@@ -92,8 +93,11 @@
             </div>
 
             <div class="filters">
+              <!-- NAV -->
               <button class="btn btn-ghost" id="navCatalogBtn">Catálogo</button>
               <button class="btn btn-ghost" id="navOrdersBtn">Mis pedidos</button>
+
+              <!-- FILTROS (solo catálogo) -->
               <input id="searchInput" type="text" placeholder="Buscar por título o autor…" />
               <select id="genreSelect">
                 <option value="">Todos los géneros</option>
@@ -139,6 +143,7 @@
         </section>
       </section>
     </main>
-<script src="app.js"></script>
+
+    <script src="app.js"></script>
   </body>
 </html>
