@@ -5,54 +5,44 @@ const API_BASE = "https://tpipaxfpf1.execute-api.eu-north-1.amazonaws.com";
 
 const ENDPOINT_GET_CLIENT = `${API_BASE}/getClientDetails`;
 const ENDPOINT_GET_BOOKS = `${API_BASE}/getBooks`;
-const ENDPOINT_GET_ORDERS = `${API_BASE}/getOrdersbyClient`; // usa ?id=
-
-// ================= SAFE DOM HELPERS =================
-function $(id){
-  const el = document.getElementById(id);
-  if(!el) console.warn(`[Atlantis] Falta elemento con id="${id}" en index.html`);
-  return el;
-}
+const ENDPOINT_GET_ORDERS = `${API_BASE}/getOrdersbyClient`; // ✅ tu endpoint real
 
 // ================= UI REFS =================
-const loginCard = $("loginCard");
-const storeCard = $("storeCard");
-const loginForm = $("loginForm");
-const loginError = $("loginError");
-const endpointLabel = $("endpointLabel");
+const loginCard = document.getElementById("loginCard");
+const storeCard = document.getElementById("storeCard");
+const loginForm = document.getElementById("loginForm");
+const loginError = document.getElementById("loginError");
+const endpointLabel = document.getElementById("endpointLabel");
 
-const userStatus = $("userStatus");
-const userPill = $("userPill");
-const logoutBtn = $("logoutBtn");
+const userStatus = document.getElementById("userStatus");
+const userPill = document.getElementById("userPill");
+const logoutBtn = document.getElementById("logoutBtn");
 
-const booksGrid = $("booksGrid");
-const booksError = $("booksError");
-const booksCount = $("booksCount");
-const refreshBtn = $("refreshBtn");
+const booksGrid = document.getElementById("booksGrid");
+const booksError = document.getElementById("booksError");
+const booksCount = document.getElementById("booksCount");
+const refreshBtn = document.getElementById("refreshBtn");
 
-const searchInput = $("searchInput");
-const genreSelect = $("genreSelect");
-const inStockOnly = $("inStockOnly");
+const searchInput = document.getElementById("searchInput");
+const genreSelect = document.getElementById("genreSelect");
+const inStockOnly = document.getElementById("inStockOnly");
 
-const statBooks = $("statBooks");
-const statInStock = $("statInStock");
-const statGenres = $("statGenres");
+const statBooks = document.getElementById("statBooks");
+const statInStock = document.getElementById("statInStock");
+const statGenres = document.getElementById("statGenres");
 
-// Nav + Orders UI (pueden no existir si el HTML no está actualizado)
-const navCatalogBtn = $("navCatalogBtn");
-const navOrdersBtn = $("navOrdersBtn");
-const pageTitle = $("pageTitle");
-const pageSubtitle = $("pageSubtitle");
+const navCatalogBtn = document.getElementById("navCatalogBtn");
+const navOrdersBtn = document.getElementById("navOrdersBtn");
+const pageTitle = document.getElementById("pageTitle");
+const pageSubtitle = document.getElementById("pageSubtitle");
 
-const ordersView = $("ordersView");
-const refreshOrdersBtn = $("refreshOrdersBtn");
-const ordersTbody = $("ordersTbody");
-const ordersError = $("ordersError");
+const ordersView = document.getElementById("ordersView");
+const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
+const ordersTbody = document.getElementById("ordersTbody");
+const ordersError = document.getElementById("ordersError");
 
-// Pintar endpoint demo si existe el label
-if(endpointLabel){
-  endpointLabel.textContent = `${ENDPOINT_GET_CLIENT}?id=1111`;
-}
+// Pintar endpoint demo
+if (endpointLabel) endpointLabel.textContent = `${ENDPOINT_GET_CLIENT}?id=1111`;
 
 const SESSION_KEY = "atlantis_session_v1";
 
@@ -110,7 +100,6 @@ async function login(customerId, password){
 function setAuthedUI(customer){
   if(loginCard) loginCard.hidden = true;
   if(storeCard) storeCard.hidden = false;
-
   if(userStatus) userStatus.textContent = `${customer.Nombre} ${customer.Apellido}`;
   if(userPill) userPill.classList.add("authed");
   if(logoutBtn) logoutBtn.hidden = false;
@@ -119,7 +108,6 @@ function setAuthedUI(customer){
 function setLoggedOutUI(){
   if(loginCard) loginCard.hidden = false;
   if(storeCard) storeCard.hidden = true;
-
   if(userStatus) userStatus.textContent = "No autenticado";
   if(userPill) userPill.classList.remove("authed");
   if(logoutBtn) logoutBtn.hidden = true;
@@ -141,7 +129,6 @@ function setPage(mode){
   if(ordersView) ordersView.hidden = !isOrders;
   if(booksGrid) booksGrid.hidden = isOrders;
 
-  // Desactivar filtros en vista pedidos (si existen)
   if(searchInput) searchInput.disabled = isOrders;
   if(genreSelect) genreSelect.disabled = isOrders;
   if(inStockOnly) inStockOnly.disabled = isOrders;
@@ -161,7 +148,7 @@ async function fetchBooks(){
   const data = await resp.json().catch(() => ({}));
 
   if(!resp.ok) throw new Error(data?.message || `Error HTTP ${resp.status}`);
-  if(!Array.isArray(data?.books)) throw new Error("Respuesta inválida");
+  if(!Array.isArray(data?.books)) throw new Error("Respuesta inválida: falta books[]");
 
   return data;
 }
@@ -169,14 +156,15 @@ async function fetchBooks(){
 function renderGenres(books){
   if(!genreSelect) return;
   const genres = Array.from(new Set(books.map(b => b.genero).filter(Boolean))).sort();
-  genreSelect.innerHTML = `<option value="">Todos los géneros</option>`
-    + genres.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join("");
+  genreSelect.innerHTML =
+    `<option value="">Todos los géneros</option>` +
+    genres.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join("");
 }
 
 function computeStats(books){
-  if(statBooks) statBooks.textContent = books.length;
-  if(statInStock) statInStock.textContent = books.filter(b => Number(b.stock || 0) > 0).length;
-  if(statGenres) statGenres.textContent = new Set(books.map(b => b.genero).filter(Boolean)).size;
+  if(statBooks) statBooks.textContent = String(books.length);
+  if(statInStock) statInStock.textContent = String(books.filter(b => Number(b.stock || 0) > 0).length);
+  if(statGenres) statGenres.textContent = String(new Set(books.map(b => b.genero).filter(Boolean)).size);
 }
 
 function applyFilters(books){
@@ -218,20 +206,14 @@ function renderBooks(books, total){
     el.innerHTML = `
       <div class="cover"></div>
       <div class="cardBody">
-        <div class="badgesRow">
-          <span class="chip">${escapeHtml(b.genero ?? "sin género")}</span>
-          <span class="chip">${escapeHtml(b.año ?? "s/año")}</span>
-          <span class="chip">${stock > 0 ? "En stock" : "Sin stock"}</span>
-        </div>
         <div class="titleRow">${escapeHtml(b.titulo ?? "Sin título")}</div>
         <div class="meta">${escapeHtml(b.autor ?? "Autor desconocido")}</div>
-
         <div class="bottomRow">
           <div>
             <div class="price">${formatEUR(price)}</div>
             <div class="stock">Stock: ${stock}</div>
           </div>
-          <button class="buyBtn" ${stock > 0 ? "" : "disabled"} data-bookid="${escapeHtml(b.id)}">
+          <button class="buyBtn" ${stock > 0 ? "" : "disabled"}>
             Comprar
           </button>
         </div>
@@ -240,16 +222,6 @@ function renderBooks(books, total){
 
     booksGrid.appendChild(el);
   }
-
-  // Comprar (sin carrito)
-  booksGrid.querySelectorAll(".buyBtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-bookid");
-      const book = lastBooksPayload?.books?.find(x => String(x.id) === String(id));
-      if(!book) return;
-      alert(`Libro seleccionado:\n\n${book.titulo}\n${book.autor}`);
-    });
-  });
 }
 
 async function loadBooksAndRender(){
@@ -260,16 +232,14 @@ async function loadBooksAndRender(){
     const payload = await fetchBooks();
     lastBooksPayload = payload;
 
+    // ✅ stats + género siempre
     renderGenres(payload.books);
     computeStats(payload.books);
 
     const filtered = applyFilters(payload.books);
     renderBooks(filtered, payload.total ?? payload.books.length);
-
   }catch(e){
     showError(booksError, e.message || "Error cargando libros");
-    if(booksGrid) booksGrid.innerHTML = "";
-    if(booksCount) booksCount.textContent = "";
   }finally{
     if(refreshBtn) refreshBtn.disabled = false;
   }
@@ -277,9 +247,9 @@ async function loadBooksAndRender(){
 
 // ================= ORDERS =================
 async function fetchOrdersByClient(id){
-  // ✅ CORRECTO: tu API espera ?id=
+  // ✅ tu API usa ?id=
   const url = `${ENDPOINT_GET_ORDERS}?id=${encodeURIComponent(id)}`;
-  console.log("[Atlantis] Fetching orders:", url);
+  console.log("Fetching orders:", url);
 
   const resp = await fetch(url);
   const data = await resp.json().catch(() => ({}));
@@ -296,7 +266,7 @@ function renderOrders(orders){
   ordersTbody.innerHTML = "";
 
   if(orders.length === 0){
-    ordersTbody.innerHTML = `<tr><td colspan="4" class="muted">No tienes pedidos todavía.</td></tr>`;
+    ordersTbody.innerHTML = `<tr><td colspan="4">No tienes pedidos.</td></tr>`;
     return;
   }
 
@@ -305,10 +275,10 @@ function renderOrders(orders){
   for(const o of sorted){
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="orderPill">#${escapeHtml(o.ordernumber ?? "")}</span></td>
-      <td>${escapeHtml(o.fechadecompra ?? "")}</td>
-      <td>${escapeHtml(o.estado ?? "")}</td>
-      <td>${escapeHtml(o.idarticulo ?? "")}</td>
+      <td>#${escapeHtml(o.ordernumber)}</td>
+      <td>${escapeHtml(o.fechadecompra)}</td>
+      <td>${escapeHtml(o.estado)}</td>
+      <td>${escapeHtml(o.idarticulo)}</td>
     `;
     ordersTbody.appendChild(tr);
   }
@@ -323,16 +293,11 @@ async function loadOrdersAndRender(){
     return;
   }
 
-  if(refreshOrdersBtn) refreshOrdersBtn.disabled = true;
-
   try{
     const orders = await fetchOrdersByClient(id);
     renderOrders(orders);
   }catch(e){
-    showError(ordersError, e.message || "Error cargando pedidos");
-    if(ordersTbody) ordersTbody.innerHTML = "";
-  }finally{
-    if(refreshOrdersBtn) refreshOrdersBtn.disabled = false;
+    showError(ordersError, e.message);
   }
 }
 
@@ -351,7 +316,7 @@ if(loginForm){
       setPage("catalog");
       await loadBooksAndRender();
     }catch(e){
-      showError(loginError, e.message || "Error de autenticación");
+      showError(loginError, e.message);
     }
   });
 }
@@ -396,13 +361,16 @@ if(inStockOnly){
 }
 
 // ================= INIT =================
-(function init(){
+(async function init(){
   const session = getSession();
+
   if(session?.customer){
     setAuthedUI(session.customer);
     setPage("catalog");
-    loadBooksAndRender();
   }else{
     setLoggedOutUI();
   }
+
+  // ✅ carga libros SIEMPRE para stats del hero
+  await loadBooksAndRender();
 })();
