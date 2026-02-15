@@ -5,7 +5,7 @@ const API_BASE = "https://tpipaxfpf1.execute-api.eu-north-1.amazonaws.com";
 
 const ENDPOINT_GET_CLIENT = `${API_BASE}/getClientDetails`;
 const ENDPOINT_GET_BOOKS = `${API_BASE}/getBooks`;
-const ENDPOINT_GET_ORDERS = `${API_BASE}/getordersbyclient`; // 👈 usa ?id=
+const ENDPOINT_GET_ORDERS = `${API_BASE}/getordersbyclient`; // 👈 tu endpoint real
 
 // ================= UI REFS =================
 const loginCard = document.getElementById("loginCard");
@@ -195,9 +195,8 @@ async function loadBooksAndRender(){
 }
 
 // ================= ORDERS =================
-async function fetchOrdersByClient(id){
-  // ✅ CORRECTO: usa ?id=
-  const url = `${ENDPOINT_GET_ORDERS}?id=${encodeURIComponent(id)}`;
+async function fetchOrdersByClient(idcliente){
+  const url = `${ENDPOINT_GET_ORDERS}?id=${encodeURIComponent(idcliente)}`;
   console.log("Fetching orders:", url);
 
   const resp = await fetch(url);
@@ -234,14 +233,14 @@ function renderOrders(orders){
 async function loadOrdersAndRender(){
   hideError(ordersError);
 
-  const id = getAuthedClientId();
-  if(!id){
+  const idcliente = getAuthedClientId();
+  if(!idcliente){
     showError(ordersError, "No se pudo determinar el id del cliente.");
     return;
   }
 
   try{
-    const orders = await fetchOrdersByClient(id);
+    const orders = await fetchOrdersByClient(idcliente);
     renderOrders(orders);
   }catch(e){
     showError(ordersError, e.message);
