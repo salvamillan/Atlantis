@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlantis — Librería Online</title>
+    <meta name="description" content="Atlantis — tienda online de libros. Descubre, elige y compra tus próximos favoritos." />
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Atlantis Home">
+        <div class="logo">A</div>
+        <div class="brandText">
+          <div class="title">Atlantis</div>
+          <div class="subtitle">Librería online</div>
+        </div>
+      </a>
+
+      <div class="topActions">
+        <div class="pill" id="userPill">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="userStatus">No autenticado</span>
+        </div>
+<button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="heroOverlay"></div>
+        <div class="heroInner">
+          <div class="heroCard">
+            <h1>Tu próxima lectura te espera</h1>
+            <p>
+              Explora el catálogo de Atlantis, filtra por género y compra en un clic.
+              (Demo)
+            </p>
+
+            <div class="heroStats">
+              <div class="stat">
+                <div class="statNum" id="statBooks">—</div>
+                <div class="statLbl">Libros</div>
+              </div>
+              <div class="stat">
+                <div class="statNum" id="statInStock">—</div>
+                <div class="statLbl">En stock</div>
+              </div>
+              <div class="stat">
+                <div class="statNum" id="statGenres">—</div>
+                <div class="statLbl">Géneros</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="loginCard card" id="loginCard">
+            <div class="cardHeader">
+              <h2>Iniciar sesión</h2>
+              <p class="muted">Valida tu cliente contra tu API en AWS.</p>
+            </div>
+
+            <form id="loginForm" class="form">
+              <label>
+                <span>ID de cliente</span>
+                <input id="customerId" type="text" placeholder="1111" autocomplete="username" required />
+              </label>
+
+              <label>
+                <span>Contraseña</span>
+                <input id="password" type="password" placeholder="••••" autocomplete="current-password" required />
+              </label>
+
+              <button class="btn" type="submit" id="loginBtn">Entrar</button>
+              <p class="error" id="loginError" hidden></p>
+
+              <div class="hint">
+                Endpoint demo:
+                <code id="endpointLabel"></code>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="container">
+        <section class="store card" id="storeCard" hidden>
+          <div class="storeTop">
+            <div>
+              <h2 id="pageTitle">Catálogo</h2>
+              <p class="muted" id="pageSubtitle">Elige, filtra y compra. (Simulación)</p>
+            </div>
+
+            <div class="filters">
+              <button class="btn btn-ghost" id="navCatalogBtn">Catálogo</button>
+              <button class="btn btn-ghost" id="navOrdersBtn">Mis pedidos</button>
+              <input id="searchInput" type="text" placeholder="Buscar por título o autor…" />
+              <select id="genreSelect">
+                <option value="">Todos los géneros</option>
+              </select>
+              <label class="checkbox">
+                <input type="checkbox" id="inStockOnly" />
+                <span>Solo en stock</span>
+              </label>
+              <button class="btn btn-ghost" id="refreshBtn">Actualizar</button>
+            </div>
+          </div>
+
+          <div class="grid" id="booksGrid"></div>
+
+          <!-- Orders view (hidden by default) -->
+          <section class="orders" id="ordersView" hidden>
+            <div class="ordersTop">
+              <div class="muted">Estos son tus pedidos (según tu usuario).</div>
+              <button class="btn btn-ghost" id="refreshOrdersBtn">Actualizar pedidos</button>
+            </div>
+
+            <div class="ordersTableWrap">
+              <table class="ordersTable">
+                <thead>
+                  <tr>
+                    <th>Nº pedido</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Artículo</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTbody"></tbody>
+              </table>
+            </div>
+
+            <p class="error" id="ordersError" hidden></p>
+          </section>
+
+          <div class="storeFooter">
+            <span class="muted" id="booksCount"></span>
+            <p class="error" id="booksError" hidden></p>
+          </div>
+        </section>
+      </section>
+    </main>
+<script src="app.js"></script>
+  </body>
+</html>
