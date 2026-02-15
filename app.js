@@ -5,7 +5,7 @@ const API_BASE = "https://tpipaxfpf1.execute-api.eu-north-1.amazonaws.com";
 
 const ENDPOINT_GET_CLIENT = `${API_BASE}/getClientDetails`;
 const ENDPOINT_GET_BOOKS = `${API_BASE}/getBooks`;
-const ENDPOINT_GET_ORDERS = `${API_BASE}/getordersbyclient`; // 👈 tu endpoint real
+const ENDPOINT_GET_ORDERS = `${API_BASE}/getOrdersbyClient`; // 👈 tu endpoint real
 
 // ================= UI REFS =================
 const loginCard = document.getElementById("loginCard");
