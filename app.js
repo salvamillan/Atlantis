@@ -340,17 +340,8 @@ async function loadBooksAndRender() {
   }
 }
 
-
-// ================= LOAD ORDERS AND RENDER (adaptada y asegura catálogo) =================
-/**
- * Carga pedidos del cliente y los renderiza.
- * - Usa normalizeOrderRow para mapear
- * - Si no hay importe en la fila, asegura que el catálogo de libros esté cargado
- *   y busca el precio del libro por idarticulo en lastBooksPayload.books
- */
 async function loadOrdersAndRender() {
   hideError(ordersError);
-  if (!ordersTbody) return;
   ordersTbody.innerHTML = "";
 
   try {
@@ -359,87 +350,26 @@ async function loadOrdersAndRender() {
       throw new Error("No hay cliente autenticado");
     }
 
-    // Asegurarnos de tener el catálogo cargado para resolver precios
-    if (!lastBooksPayload || !Array.isArray(lastBooksPayload.books) || lastBooksPayload.books.length === 0) {
-      try {
-        await loadBooksAndRender();
-      } catch (e) {
-        console.warn("No se pudo cargar el catálogo de libros para resolver importes:", e);
-      }
-    }
-
     const orders = await fetchOrdersByClient(session.customer.id);
 
-    console.group("DEBUG: orders response");
-    console.log("Raw orders payload:", orders);
-    console.groupEnd();
-
-    // extraer array robustamente si la respuesta viene anidada
-    const extractOrdersArray = (payload) => {
-      if (!payload) return [];
-      if (Array.isArray(payload)) return payload;
-      if (Array.isArray(payload.orders)) return payload.orders;
-      if (payload.data && Array.isArray(payload.data.orders)) return payload.data.orders;
-      if (payload.data && Array.isArray(payload.data)) return payload.data;
-      // fallback: primer array que encuentre
-      const firstArray = Object.values(payload).find(v => Array.isArray(v));
-      return firstArray || [];
-    };
-
-    const ordersArr = extractOrdersArray(orders);
-    if (!Array.isArray(ordersArr) || ordersArr.length === 0) {
+    if (orders.length === 0) {
       ordersTbody.innerHTML = `<tr><td colspan="4" class="muted">No hay pedidos para este cliente.</td></tr>`;
       return;
     }
 
     const frag = document.createDocumentFragment();
-
-    // helper para buscar precio en el catálogo cargado
-    const findPriceInCatalog = (idart) => {
-      if (!idart) return null;
-      if (!lastBooksPayload || !Array.isArray(lastBooksPayload.books)) return null;
-      // buscar por varios nombres posibles de id en books
-      const found = lastBooksPayload.books.find(b => {
-        const candidates = [
-          b.id, b.idlibro, b.idArticulo, b.idarticulo, b.isbn, b.sku, b.codigo
-        ];
-        return candidates.some(c => c != null && String(c).toLowerCase() === String(idart).toLowerCase());
-      });
-      if (!found) return null;
-      // intentar sacar precio
-      const price = found.precio ?? found.price ?? found.cost ?? found.valor ?? found.amount ?? null;
-      if (price == null) return null;
-      const n = Number(price);
-      if (!Number.isFinite(n)) return null;
-      return `${n.toFixed(2)} €`;
-    };
-
-    ordersArr.forEach((rawRow) => {
-      const o = normalizeOrderRow(rawRow);
-
-      let importeToShow = o.importe; // puede ser string o null
-
-      // Si no viene importe, intentar resolver por idarticulo en catálogo
-      if ((importeToShow == null || importeToShow === "") && o.idarticulo) {
-        const found = findPriceInCatalog(o.idarticulo);
-        if (found) {
-          importeToShow = found;
-        } else {
-          // attempted to fetch price failed — keep as "—" and warn
-          console.warn(`No se encontró precio para idarticulo=${o.idarticulo} (order ${o.idPedido})`);
-          importeToShow = "—";
-        }
-      }
-
-      // Si tampoco hay idarticulo o no se encontró precio, dejar '—'
-      if (importeToShow == null) importeToShow = "—";
-
+    orders.forEach((o) => {
       const tr = document.createElement("tr");
+      const id = escapeHtml(String(o.idPedido ?? o.id ?? ""));
+      const date = escapeHtml(String(o.fecha ?? o.date ?? ""));
+      const status = escapeHtml(String(o.estado ?? o.status ?? ""));
+      const amount = Number(o.importe ?? o.total ?? 0).toFixed(2);
+
       tr.innerHTML = `
-        <td>${escapeHtml(String(o.idPedido))}</td>
-        <td>${escapeHtml(String(o.fecha))}</td>
-        <td>${escapeHtml(String(o.estado))}</td>
-        <td>${escapeHtml(String(importeToShow))}</td>
+        <td>${id}</td>
+        <td>${date}</td>
+        <td>${status}</td>
+        <td>${amount} €</td>
       `;
       frag.appendChild(tr);
     });
@@ -449,7 +379,6 @@ async function loadOrdersAndRender() {
     showError(ordersError, e.message || "Error cargando pedidos");
   }
 }
-
 
 // ================= EVENTS =================
 if (loginForm) {
@@ -539,78 +468,3 @@ if (inStockOnly) {
 
   await loadBooksAndRender();
 })();
-
-
-
-// ================= NORMALIZE ORDER ROW (ajustada a tu esquema) =================
-function normalizeOrderRow(row) {
-  if (!row || typeof row !== "object") return {
-    idPedido: "",
-    fecha: "",
-    estado: "",
-    importe: "—"
-  };
-
-  const pick = (obj, keys) => {
-    for (const k of keys) {
-      if (obj == null) break;
-      if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] != null) return obj[k];
-    }
-    for (const key of Object.keys(obj || {})) {
-      const lk = key.toLowerCase();
-      for (const k of keys) {
-        if (lk === k.toLowerCase() && obj[key] != null) return obj[key];
-      }
-    }
-    return undefined;
-  };
-
-  const formatDate = (raw) => {
-    if (raw == null || raw === "") return "";
-    if (typeof raw === "number" && Number.isFinite(raw)) {
-      const ms = String(raw).length <= 10 ? raw * 1000 : raw;
-      const d = new Date(ms);
-      return isNaN(d.getTime()) ? String(raw) : d.toLocaleString();
-    }
-    if (typeof raw === "string") {
-      const s = raw.trim().replace(/\\.\\d+Z?$/, "Z");
-      const d = new Date(s);
-      if (!isNaN(d.getTime())) return d.toLocaleString();
-      const maybeNum = Number(raw);
-      if (!Number.isNaN(maybeNum)) return formatDate(maybeNum);
-      return raw;
-    }
-    return String(raw);
-  };
-
-  const formatAmount = (raw) => {
-    if (raw == null || raw === "") return null;
-    if (typeof raw === "object") {
-      const amt = pick(raw, ["importe", "amount", "total", "price"]) || 0;
-      const currency = pick(raw, ["currency","moneda","currencyCode"]) || "€";
-      const num = Number(amt || 0);
-      if (!Number.isFinite(num)) return String(raw);
-      return `${num.toFixed(2)} ${currency}`;
-    }
-    const num = Number(raw);
-    if (!Number.isFinite(num)) return String(raw);
-    return `${num.toFixed(2)} €`;
-  };
-
-  const idPedido = pick(row, ["ordernumber", "orderNumber", "order_number", "orderno", "orderNo"]) || "";
-  const rawDate = pick(row, ["fechadecompra", "fechaDeCompra", "fecha_de_compra", "createdAt", "date"]) || "";
-  const fecha = formatDate(rawDate);
-  const estado = pick(row, ["estado", "status", "state"]) || "";
-  const importeRaw = pick(row, ["importe", "total", "amount", "totalAmount", "price", "valor", "order_total"]) ;
-  const importeFormatted = formatAmount(importeRaw);
-  const idarticulo = pick(row, ["idarticulo", "idArticulo", "itemId", "product_id"]) || "";
-
-  return {
-    idPedido,
-    fecha,
-    estado,
-    importe: importeFormatted,
-    idarticulo,
-    rawRow: row
-  };
-}

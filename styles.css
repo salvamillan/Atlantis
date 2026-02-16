@@ -643,3 +643,27 @@ main {
     justify-content: flex-start;
   }
 }
+
+
+/* Header hero image */
+.hero {
+  position: relative;
+  padding: 28px 22px 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.1fr);
+  gap: 24px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.heroImage {
+  grid-column: 1 / -1;
+  height: 240px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  opacity: 0.95;
+}
