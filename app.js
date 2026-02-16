@@ -342,6 +342,7 @@ async function loadBooksAndRender() {
 
 async function loadOrdersAndRender() {
   hideError(ordersError);
+  if (!ordersTbody) return;
   ordersTbody.innerHTML = "";
 
   try {
@@ -350,26 +351,86 @@ async function loadOrdersAndRender() {
       throw new Error("No hay cliente autenticado");
     }
 
-    const orders = await fetchOrdersByClient(session.customer.id);
+    // Asegurar catálogo (para título e importe)
+    if (!bookPriceMap || !bookTitleMap) {
+      await loadBooksAndBuildPriceMap();
+    }
 
-    if (orders.length === 0) {
-      ordersTbody.innerHTML = `<tr><td colspan="4" class="muted">No hay pedidos para este cliente.</td></tr>`;
+    const ordersRaw = await fetchOrdersByClient(session.customer.id);
+
+    console.group("DEBUG: orders response");
+    console.log("Raw orders payload:", ordersRaw);
+    console.groupEnd();
+
+    const extractOrdersArray = (payload) => {
+      if (!payload) return [];
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload.orders)) return payload.orders;
+      if (payload.data && Array.isArray(payload.data.orders)) return payload.data.orders;
+      if (payload.data && Array.isArray(payload.data)) return payload.data;
+      const firstArray = Object.values(payload).find(v => Array.isArray(v));
+      return firstArray || [];
+    };
+
+    let ordersArr = extractOrdersArray(ordersRaw);
+    if (!Array.isArray(ordersArr) || ordersArr.length === 0) {
+      ordersTbody.innerHTML = `<tr><td colspan="5" class="muted">No hay pedidos para este cliente.</td></tr>`;
       return;
     }
 
-    const frag = document.createDocumentFragment();
-    orders.forEach((o) => {
-      const tr = document.createElement("tr");
-      const id = escapeHtml(String(o.idPedido ?? o.id ?? ""));
-      const date = escapeHtml(String(o.fecha ?? o.date ?? ""));
-      const status = escapeHtml(String(o.estado ?? o.status ?? ""));
-      const amount = Number(o.importe ?? o.total ?? 0).toFixed(2);
+    // Parse fecha para ordenar (DD/MM/YYYY o D/M/YYYY)
+    const parseOrderDate = (raw) => {
+      if (!raw) return 0;
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        const ms = String(raw).length <= 10 ? raw * 1000 : raw;
+        return ms;
+      }
+      const s = String(raw).trim();
+      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (m) {
+        const day = Number(m[1]);
+        const month = Number(m[2]) - 1;
+        let year = Number(m[3]);
+        if (year < 100) year += year > 50 ? 1900 : 2000;
+        const d = new Date(year, month, day);
+        return isNaN(d.getTime()) ? 0 : d.getTime();
+      }
+      const d2 = new Date(s);
+      return isNaN(d2.getTime()) ? 0 : d2.getTime();
+    };
 
+    // Ordenar de más nuevo a más viejo
+    ordersArr = ordersArr.slice().sort((a, b) => {
+      const ta = parseOrderDate(a.fechadecompra ?? a.fechaDeCompra ?? a.fecha ?? a.date);
+      const tb = parseOrderDate(b.fechadecompra ?? b.fechaDeCompra ?? b.fecha ?? b.date);
+      return tb - ta;
+    });
+
+    const frag = document.createDocumentFragment();
+
+    ordersArr.forEach((rawRow) => {
+      const o = normalizeOrderRow(rawRow);
+
+      // Resolver título y precio por idarticulo
+      const title = getTitleForArticle(o.idarticulo) || "—";
+      let importeToShow = o.importe;
+
+      if ((importeToShow == null || importeToShow === "") && o.idarticulo) {
+        const foundPrice = getFormattedPriceForArticle(o.idarticulo);
+        importeToShow = foundPrice || "—";
+        if (!foundPrice) {
+          console.warn(`No se encontró precio en catálogo para idarticulo=${o.idarticulo} (order ${o.idPedido})`);
+        }
+      }
+      if (importeToShow == null) importeToShow = "—";
+
+      const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${id}</td>
-        <td>${date}</td>
-        <td>${status}</td>
-        <td>${amount} €</td>
+        <td>${escapeHtml(String(o.idPedido))}</td>
+        <td>${escapeHtml(String(o.fecha))}</td>
+        <td>${escapeHtml(String(o.estado))}</td>
+        <td>${escapeHtml(String(title))}</td>
+        <td>${escapeHtml(String(importeToShow))}</td>
       `;
       frag.appendChild(tr);
     });
@@ -466,5 +527,54 @@ if (inStockOnly) {
     setLoggedOutUI();
   }
 
+  await loadBooksAndBuildPriceMap();
+
   await loadBooksAndRender();
 })();
+
+
+// ---------------------
+// CACHE DE LIBROS / MAPAS (precio y título)
+// ---------------------
+let lastBooksPayload = null;
+let bookPriceMap = null;
+let bookTitleMap = null;
+
+async function loadBooksAndBuildPriceMap() {
+  try {
+    const payload = await fetchBooks();
+    lastBooksPayload = payload || { books: [] };
+
+    bookPriceMap = {};
+    bookTitleMap = {};
+
+    if (Array.isArray(lastBooksPayload.books)) {
+      lastBooksPayload.books.forEach(b => {
+        const idKey = String(b.id ?? b.idlibro ?? b.idArticulo ?? b.idarticulo ?? "");
+        const price = Number(b.precio ?? b.price ?? b.valor ?? b.amount ?? NaN);
+        const title = String(b.titulo ?? b.title ?? "").trim();
+
+        if (idKey) {
+          bookPriceMap[idKey] = Number.isFinite(price) ? price : null;
+          bookTitleMap[idKey] = title || null;
+        }
+      });
+    }
+    return lastBooksPayload;
+  } catch (e) {
+    console.warn("Error cargando libros para price/title map:", e);
+    return null;
+  }
+}
+
+function getFormattedPriceForArticle(idart) {
+  if (!idart || !bookPriceMap) return null;
+  const price = bookPriceMap[String(idart)];
+  if (price == null || !Number.isFinite(Number(price))) return null;
+  return `${Number(price).toFixed(2)} €`;
+}
+function getTitleForArticle(idart) {
+  if (!idart || !bookTitleMap) return null;
+  const t = bookTitleMap[String(idart)];
+  return t || null;
+}
