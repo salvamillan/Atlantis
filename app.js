@@ -12,7 +12,6 @@ const loginCard = document.getElementById("loginCard");
 const storeCard = document.getElementById("storeCard");
 const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
-const endpointLabel = document.getElementById("endpointLabel");
 
 const userStatus = document.getElementById("userStatus");
 const userPill = document.getElementById("userPill");
@@ -41,9 +40,6 @@ const ordersView = document.getElementById("ordersView");
 const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
 const ordersTbody = document.getElementById("ordersTbody");
 const ordersError = document.getElementById("ordersError");
-
-// Pintar endpoint demo
-if (endpointLabel) endpointLabel.textContent = `${ENDPOINT_GET_CLIENT}?id=1111`;
 
 const SESSION_KEY = "atlantis_session_v1";
 
