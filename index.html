@@ -14,7 +14,7 @@
         <div class="logo">A</div>
         <div class="brandText">
           <div class="title">Atlantis</div>
-          <div class="subtitle">Librería online</div>
+          <div class="subtitle">Librería Online</div>
         </div>
       </a>
 
@@ -24,20 +24,27 @@
           <span id="userStatus">No autenticado</span>
         </div>
 
+        <button class="btn btn-ghost" id="chatBtn" hidden>Iniciar chat</button>
         <button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
       </div>
     </header>
 
     <main>
       <section class="hero">
+        <div class="heroImage" role="img" aria-label="Librería bonita" style="background-image: url(header.jpg);"></div>
         <div class="heroOverlay"></div>
         <div class="heroInner">
           <div class="heroCard">
             <h1>Tu próxima lectura te espera</h1>
             <p>
-              Explora el catálogo de Atlantis, filtra por género y consulta tus pedidos.
-              (Demo)
+              Atlantis se conecta a tu API en AWS para validar clientes y mostrar su catálogo
+              de libros y pedidos. Ideal para demos de integraciones.
             </p>
+
+            <div class="heroHighlight">
+              <span class="label">Endpoint de cliente:</span>
+              <code id="endpointLabel"></code>
+            </div>
 
             <div class="heroStats">
               <div class="stat">
@@ -72,27 +79,61 @@
                 <input id="password" type="password" placeholder="••••" autocomplete="current-password" required />
               </label>
 
-              <button class="btn" type="submit" id="loginBtn">Entrar</button>
               <p class="error" id="loginError" hidden></p>
 
-              <div class="hint">
-                Endpoint demo:
-                <code id="endpointLabel"></code>
-              </div>
+              <button type="submit" class="btn btn-primary">Entrar</button>
             </form>
+
+            <p class="helper">
+              Para la demo, el endpoint devuelve un cliente ficticio. Ajusta el código en <code>app.js</code> para usar tu propia API.
+            </p>
           </div>
         </div>
       </section>
 
-      <section class="container">
-        <section class="store card" id="storeCard" hidden>
-          <div class="storeTop">
-            <div>
-              <h2 id="pageTitle">Catálogo</h2>
-              <p class="muted" id="pageSubtitle">Elige, filtra y compra. (Simulación)</p>
+      <section class="store" id="storeCard" hidden>
+        <aside class="sidebar">
+          <div class="sidebarInner">
+            <h2>Explora el catálogo</h2>
+            <p class="muted">
+              Filtra por título, autor o género y consulta tus pedidos asociados a tu usuario.
+            </p>
+
+            <div class="sidebarSection">
+              <h3>Catálogo</h3>
+              <p class="small muted">
+                Los libros se cargan desde tu endpoint de catálogo en AWS.
+              </p>
             </div>
 
-            <div class="filters">
+            <div class="sidebarSection">
+              <h3>Pedidos</h3>
+              <p class="small muted">
+                “Mis pedidos” carga los pedidos asociados al cliente autenticado.
+              </p>
+            </div>
+
+            <div class="sidebarSection">
+              <h3>Cómo usar esta demo</h3>
+              <ul class="hintList">
+                <li>Ajusta los endpoints en <code>app.js</code>.</li>
+                <li>Haz login con un cliente válido de tu API.</li>
+                <li>Explora el catálogo y los pedidos en tiempo real.</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <section class="storeMain">
+          <div class="storeHeader">
+            <div>
+              <h2 id="pageTitle">Catálogo</h2>
+              <p class="muted" id="pageSubtitle">
+                Todos los libros disponibles en tu API.
+              </p>
+            </div>
+
+            <div class="storeControls">
               <!-- NAV -->
               <button class="btn btn-ghost" id="navCatalogBtn">Catálogo</button>
               <button class="btn btn-ghost" id="navOrdersBtn">Mis pedidos</button>
@@ -123,13 +164,15 @@
               <table class="ordersTable">
                 <thead>
                   <tr>
-                    <th>Nº pedido</th>
+                    <th>ID Pedido</th>
                     <th>Fecha</th>
                     <th>Estado</th>
-                    <th>Artículo</th>
+                    <th>Importe</th>
                   </tr>
                 </thead>
-                <tbody id="ordersTbody"></tbody>
+                <tbody id="ordersTbody">
+                  <!-- rows -->
+                </tbody>
               </table>
             </div>
 
@@ -145,5 +188,25 @@
     </main>
 
     <script src="app.js"></script>
+
+    <!-- Genesys Cloud Web Messenger -->
+    <script type="text/javascript" charset="utf-8">
+      (function (g, e, n, es, ys) {
+        g['_genesysJs'] = e;
+        g[e] = g[e] || function () {
+          (g[e].q = g[e].q || []).push(arguments)
+        };
+        g[e].t = 1 * new Date();
+        g[e].c = es;
+        ys = document.createElement('script'); 
+        ys.async = 1; 
+        ys.src = n; 
+        ys.charset = 'utf-8'; 
+        document.head.appendChild(ys);
+      })(window, 'Genesys', 'https://apps.mypurecloud.de/genesys-bootstrap/genesys.min.js', {
+        environment: 'prod-euc1',
+        deploymentId: '96cc9cbc-610e-4d0d-a8eb-fdf18603607e'
+      });
+    </script>
   </body>
 </html>
