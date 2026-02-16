@@ -214,6 +214,51 @@ function setPage(mode) {
 // ================= RENDER HELPERS (libros) =================
 let lastBooksPayload = null;
 
+
+
+let bookPriceMap = null;
+let bookTitleMap = null;
+
+async function loadBooksAndBuildPriceMap() {
+  try {
+    const payload = await fetchBooks();
+    lastBooksPayload = payload || { books: [] };
+
+    bookPriceMap = {};
+    bookTitleMap = {};
+
+    if (Array.isArray(lastBooksPayload.books)) {
+      lastBooksPayload.books.forEach((b) => {
+        const idKey = String(b.id ?? b.idlibro ?? b.idArticulo ?? b.idarticulo ?? "");
+        const price = Number(b.precio ?? b.price ?? b.valor ?? b.amount ?? NaN);
+        const title = String(b.titulo ?? b.title ?? "").trim();
+
+        if (idKey) {
+          bookPriceMap[idKey] = Number.isFinite(price) ? price : null;
+          bookTitleMap[idKey] = title || null;
+        }
+      });
+    }
+    return lastBooksPayload;
+  } catch (e) {
+    console.warn("Error cargando libros para price/title map:", e);
+    return null;
+  }
+}
+
+function getFormattedPriceForArticle(idart) {
+  if (!idart || !bookPriceMap) return null;
+  const price = bookPriceMap[String(idart)];
+  if (price == null || !Number.isFinite(Number(price))) return null;
+  return `${Number(price).toFixed(2)} €`;
+}
+
+function getTitleForArticle(idart) {
+  if (!idart || !bookTitleMap) return null;
+  const t = bookTitleMap[String(idart)];
+  return t || null;
+}
+
 function createBookCard(book) {
   const card = document.createElement("article");
   card.className = "bookCard";
@@ -531,50 +576,3 @@ if (inStockOnly) {
 
   await loadBooksAndRender();
 })();
-
-
-// ---------------------
-// CACHE DE LIBROS / MAPAS (precio y título)
-// ---------------------
-let lastBooksPayload = null;
-let bookPriceMap = null;
-let bookTitleMap = null;
-
-async function loadBooksAndBuildPriceMap() {
-  try {
-    const payload = await fetchBooks();
-    lastBooksPayload = payload || { books: [] };
-
-    bookPriceMap = {};
-    bookTitleMap = {};
-
-    if (Array.isArray(lastBooksPayload.books)) {
-      lastBooksPayload.books.forEach(b => {
-        const idKey = String(b.id ?? b.idlibro ?? b.idArticulo ?? b.idarticulo ?? "");
-        const price = Number(b.precio ?? b.price ?? b.valor ?? b.amount ?? NaN);
-        const title = String(b.titulo ?? b.title ?? "").trim();
-
-        if (idKey) {
-          bookPriceMap[idKey] = Number.isFinite(price) ? price : null;
-          bookTitleMap[idKey] = title || null;
-        }
-      });
-    }
-    return lastBooksPayload;
-  } catch (e) {
-    console.warn("Error cargando libros para price/title map:", e);
-    return null;
-  }
-}
-
-function getFormattedPriceForArticle(idart) {
-  if (!idart || !bookPriceMap) return null;
-  const price = bookPriceMap[String(idart)];
-  if (price == null || !Number.isFinite(Number(price))) return null;
-  return `${Number(price).toFixed(2)} €`;
-}
-function getTitleForArticle(idart) {
-  if (!idart || !bookTitleMap) return null;
-  const t = bookTitleMap[String(idart)];
-  return t || null;
-}
